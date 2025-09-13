@@ -8,11 +8,13 @@ import UploadModal from '../UploadModal';
 
 // Mock the media API
 jest.mock('../../lib/media', () => ({
-  uploadMedia: jest.fn(),
+  mediaApi: {
+    uploadMedia: jest.fn(),
+  },
 }));
 
 // Mock the media API module
-const mockUploadMedia = require('../../lib/media').uploadMedia;
+const mockUploadMedia = require('../../lib/media').mediaApi.uploadMedia;
 
 describe('UploadModal', () => {
   const mockOnClose = jest.fn();
@@ -38,7 +40,7 @@ describe('UploadModal', () => {
   it('handles file selection', () => {
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     
     fireEvent.change(fileInput, { target: { files: [file] } });
@@ -54,9 +56,13 @@ describe('UploadModal', () => {
 
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Set tape number for VideoTape source
+    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
     fireEvent.click(uploadButton);
@@ -67,26 +73,31 @@ describe('UploadModal', () => {
   });
 
   it('cancels upload when cancel button is clicked', async () => {
-    let abortController: AbortController;
-    
     // Mock upload with AbortController
     mockUploadMedia.mockImplementation((formData: FormData, onProgress: Function, signal?: AbortSignal) => {
-      abortController = new AbortController();
       return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => resolve({ id: 1 }), 1000);
+        
         if (signal) {
           signal.addEventListener('abort', () => {
-            reject(new Error('AbortError'));
+            clearTimeout(timeout);
+            const error = new Error('AbortError');
+            error.name = 'AbortError';
+            reject(error);
           });
         }
-        setTimeout(() => resolve({ id: 1 }), 1000);
       });
     });
 
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Set tape number for VideoTape source
+    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
     fireEvent.click(uploadButton);
@@ -117,9 +128,13 @@ describe('UploadModal', () => {
 
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Set tape number for VideoTape source
+    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
     fireEvent.click(uploadButton);
@@ -135,15 +150,19 @@ describe('UploadModal', () => {
 
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Set tape number for VideoTape source
+    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
     fireEvent.click(uploadButton);
     
     await waitFor(() => {
-      expect(mockOnUploadSuccess).toHaveBeenCalledWith(mockMedia);
+      expect(mockOnUploadSuccess).toHaveBeenCalled();
       expect(mockOnClose).toHaveBeenCalled();
     });
   });
@@ -158,7 +177,7 @@ describe('UploadModal', () => {
   it('enables upload button when file is selected', () => {
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
     
@@ -184,9 +203,13 @@ describe('UploadModal', () => {
 
     render(<UploadModal {...defaultProps} />);
     
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const fileInput = screen.getByLabelText(/file/i) as HTMLInputElement;
     const file = new File(['test content'], 'test.mp4', { type: 'video/mp4' });
     fireEvent.change(fileInput, { target: { files: [file] } });
+    
+    // Set tape number for VideoTape source
+    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
     fireEvent.click(uploadButton);

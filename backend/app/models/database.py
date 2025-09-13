@@ -67,7 +67,7 @@ class ImportStatus(str, enum.Enum):
 class MediaSource(Base):
     __tablename__ = "media_sources"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     kind = Column(Enum(MediaSourceKind), unique=True, nullable=False)
     name = Column(String(120), nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
@@ -76,7 +76,7 @@ class MediaSource(Base):
 class User(Base):
     __tablename__ = "users"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.USER)
     email = Column(String(255), unique=True, nullable=False, index=True)
     phone = Column(String(32), nullable=True)
@@ -99,7 +99,7 @@ class User(Base):
 class Session(Base):
     __tablename__ = "sessions"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     refresh_token_hash = Column(String(64), unique=True, nullable=False, index=True)
     user_agent = Column(String(255), nullable=True)
@@ -115,7 +115,7 @@ class Session(Base):
 class Media(Base):
     __tablename__ = "media"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     kind = Column(Enum(MediaKind), nullable=False)
     title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
@@ -160,7 +160,7 @@ class Media(Base):
 class Tag(Base):
     __tablename__ = "tags"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     name = Column(String(64), unique=True, nullable=False, index=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
@@ -182,7 +182,7 @@ class MediaTag(Base):
 class Comment(Base):
     __tablename__ = "comments"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     media_id = Column(BigInteger, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     body = Column(Text, nullable=False)
@@ -198,7 +198,7 @@ class Comment(Base):
 class MediaAsset(Base):
     __tablename__ = "media_assets"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     media_id = Column(BigInteger, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
     asset_type = Column(Enum(AssetType), nullable=False)
     storage_path = Column(String(1024), nullable=False)
@@ -218,7 +218,7 @@ class MediaAsset(Base):
 class Notification(Base):
     __tablename__ = "notifications"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     recipient_user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     event_type = Column(Enum(NotificationEventType), nullable=False)
     payload_json = Column(JSON, nullable=False)
@@ -234,7 +234,7 @@ class Notification(Base):
 class Import(Base):
     __tablename__ = "imports"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     source = Column(Enum(MediaSourceKind), nullable=False)
     external_id = Column(String(255), nullable=True)
     media_id = Column(BigInteger, ForeignKey("media.id"), nullable=True)
@@ -251,7 +251,7 @@ class Import(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     
-    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, index=True)
     actor_user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     action = Column(String(64), nullable=False)
     target_table = Column(String(64), nullable=False)

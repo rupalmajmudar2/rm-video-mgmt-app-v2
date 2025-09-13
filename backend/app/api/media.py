@@ -279,7 +279,7 @@ async def upload_media(
     file_hash.update(content)
     content_hash = file_hash.hexdigest()
     
-    # Check for duplicate files
+    # Check for duplicate files BEFORE saving to disk
     existing_media = db.query(Media).filter(
         Media.content_hash == content_hash,
         Media.deleted_at.is_(None)
@@ -291,7 +291,7 @@ async def upload_media(
             detail=f"Duplicate file detected. A file with the same content already exists: {existing_media.title or existing_media.filename}"
         )
     
-    # Save file
+    # Only save file if no duplicate found
     try:
         with open(file_path, "wb") as buffer:
             buffer.write(content)
@@ -327,6 +327,7 @@ async def upload_media(
         media.filename = filename
         media.byte_size = len(content)
         media.content_hash = content_hash
+        media.storage_path = file_path  # Set the storage path
         media.status = "READY"  # For uploaded files, mark as ready
         db.commit()
         
@@ -475,7 +476,7 @@ async def stream_media(
     
     # Construct file path
     media_dir = "/tmp/media"
-    file_path = os.path.join(media_dir, media.filename)
+    file_path = media.storage_path
     
     if not os.path.exists(file_path):
         raise HTTPException(
@@ -576,7 +577,7 @@ async def download_media(
     
     # Construct file path
     media_dir = "/tmp/media"
-    file_path = os.path.join(media_dir, media.filename)
+    file_path = media.storage_path
     
     if not os.path.exists(file_path):
         raise HTTPException(
@@ -586,8 +587,7 @@ async def download_media(
     
     return FileResponse(
         path=file_path,
-        filename=media.filename,
-        as_attachment=True
+        filename=media.filename
     )
 
 

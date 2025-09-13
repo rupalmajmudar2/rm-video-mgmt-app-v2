@@ -76,7 +76,7 @@ class MediaService:
         # For now, we'll generate a placeholder hash
         content_hash = hashlib.sha256(f"{media_dto.source_kind}_{media_dto.source_ref}".encode()).hexdigest()
         
-        # Check for duplicate tape_number if VideoTape
+        # Check for duplicate tape_number if VideoTape (check this first)
         if media_dto.source_kind == "VIDEOTAPE" and media_dto.tape_number:
             existing = self.db.query(Media).join(MediaSourceModel).filter(
                 MediaSourceModel.kind == "VIDEOTAPE",
@@ -85,6 +85,14 @@ class MediaService:
             ).first()
             if existing:
                 raise ValueError(f"Tape number {media_dto.tape_number} already exists")
+        
+        # Check for duplicate content_hash
+        existing_hash = self.db.query(Media).filter(
+            Media.content_hash == content_hash,
+            Media.deleted_at.is_(None)
+        ).first()
+        if existing_hash:
+            raise ValueError("Duplicate content detected")
         
         # Create media record
         media = Media(

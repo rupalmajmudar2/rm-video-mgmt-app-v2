@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, validator
 
 from ..core.database import get_db
 from ..core.config import settings
@@ -31,9 +31,15 @@ class TokenData(BaseModel):
 
 class UserCreate(BaseModel):
     name: str
-    email: str
+    email: EmailStr
     phone: Optional[str] = None
     password: str
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError('Password must be at least 8 characters long')
+        return v
 
 
 class UserResponse(BaseModel):
@@ -94,7 +100,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     return user
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new user (requires admin approval)"""
     # Check if user already exists
@@ -163,7 +169,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
 
 @router.post("/refresh", response_model=Token)
-async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
+async def refresh_token(request: dict, db: Session = Depends(get_db)):
+    refresh_token = request.get("refresh_token")
     """Refresh access token using refresh token"""
     # Find session by refresh token
     sessions = db.query(UserSession).filter(
@@ -205,8 +212,14 @@ async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
 
 
 @router.post("/logout")
-async def logout(refresh_token: str, db: Session = Depends(get_db)):
+async def logout(request: dict = None, db: Session = Depends(get_db)):
     """Logout by revoking refresh token"""
+    if not request or "refresh_token" not in request:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token required"
+        )
+    refresh_token = request.get("refresh_token")
     # Find and revoke session
     sessions = db.query(UserSession).filter(
         UserSession.expires_at > datetime.utcnow(),
