@@ -53,7 +53,7 @@ class MediaService:
             Media.deleted_at.is_(None)
         ).first()
     
-    def create_media(self, media_dto: MediaDTO, uploaded_by: int) -> Media:
+    def create_media(self, media_dto: MediaDTO, uploaded_by: int, content_hash: Optional[str] = None) -> Media:
         """Create new media with validation"""
         # Get the appropriate source validator
         source_validator = get_media_source(media_dto.source_kind)
@@ -72,9 +72,9 @@ class MediaService:
         if not source:
             raise ValueError(f"Unknown source kind: {media_dto.source_kind}")
         
-        # Check for duplicate content_hash (if we had file upload)
-        # For now, we'll generate a placeholder hash
-        content_hash = hashlib.sha256(f"{media_dto.source_kind}_{media_dto.source_ref}".encode()).hexdigest()
+        # Use provided content_hash or generate placeholder for non-upload sources
+        if content_hash is None:
+            content_hash = hashlib.sha256(f"{media_dto.source_kind}_{media_dto.source_ref}".encode()).hexdigest()
         
         # Check for duplicate tape_number if VideoTape (check this first)
         if media_dto.source_kind == "VIDEOTAPE" and media_dto.tape_number:

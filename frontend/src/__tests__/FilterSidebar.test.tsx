@@ -86,14 +86,7 @@ describe('FilterSidebar Component', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith({ tape_number: 'TAPE001' })
   })
 
-  test('calls onFilterChange when date range changes', () => {
-    render(<FilterSidebar {...defaultProps} />)
-    
-    const dateFromInput = screen.getByDisplayValue('')
-    fireEvent.change(dateFromInput, { target: { value: '2023-01-01' } })
-    
-    expect(mockOnFilterChange).toHaveBeenCalledWith({ date_from: '2023-01-01' })
-  })
+  // Date range functionality was removed, so this test is no longer needed
 
   test('shows clear filters button when filters are active', () => {
     const filtersWithActiveFilters = {
@@ -139,16 +132,14 @@ describe('FilterSidebar Component', () => {
     const filtersWithValues = {
       ...defaultProps.filters,
       source: 'VIDEOTAPE',
-      tape_number: 'TAPE001',
-      date_from: '2023-01-01',
-      date_to: '2023-12-31'
+      tape_number: 'TAPE001'
     }
     
     render(<FilterSidebar {...defaultProps} filters={filtersWithValues} />)
     
-    expect(screen.getByDisplayValue('VIDEOTAPE')).toBeInTheDocument()
+    // Check for the selected option in the select element
+    const sourceSelect = screen.getByLabelText('Source')
+    expect(sourceSelect).toHaveValue('VIDEOTAPE')
     expect(screen.getByDisplayValue('TAPE001')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('2023-01-01')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('2023-12-31')).toBeInTheDocument()
   })
 })

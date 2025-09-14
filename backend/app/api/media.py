@@ -321,7 +321,8 @@ async def upload_media(
     media_service = MediaService(db)
     
     try:
-        media = media_service.create_media(media_dto, current_user.id)
+        # Pass the real content hash to the service
+        media = media_service.create_media(media_dto, current_user.id, content_hash)
         
         # Update media with file information
         media.filename = filename

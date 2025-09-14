@@ -80,16 +80,16 @@ describe('MediaCard Component', () => {
   test('displays play icon for video media', () => {
     render(<MediaCard media={mockVideoTapeMedia} />)
     
-    // Check for play icon (assuming it's rendered as an SVG or icon)
-    const playIcon = screen.getByRole('img', { hidden: true }) || screen.getByTestId('play-icon')
+    // Check for play icon - look for the SVG with lucide-play class
+    const playIcon = document.querySelector('.lucide-play')
     expect(playIcon).toBeInTheDocument()
   })
 
   test('displays image icon for photo media', () => {
     render(<MediaCard media={mockICloudMedia} />)
     
-    // Check for image icon
-    const imageIcon = screen.getByRole('img', { hidden: true }) || screen.getByTestId('image-icon')
+    // Check for image icon - look for the SVG with lucide-image class
+    const imageIcon = document.querySelector('.lucide-image')
     expect(imageIcon).toBeInTheDocument()
   })
 

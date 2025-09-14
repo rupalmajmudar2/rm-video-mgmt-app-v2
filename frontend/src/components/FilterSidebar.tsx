@@ -55,10 +55,11 @@ export default function FilterSidebar({ filters, onFilterChange }: FilterSidebar
           <div className="p-4 space-y-6">
             {/* Source Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="source-filter" className="block text-sm font-medium text-gray-700 mb-2">
                 Source
               </label>
               <select
+                id="source-filter"
                 value={filters.source || ''}
                 onChange={(e) => onFilterChange({ source: e.target.value || undefined })}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -75,10 +76,11 @@ export default function FilterSidebar({ filters, onFilterChange }: FilterSidebar
             {/* Tape Number Filter (only for VideoTape) */}
             {filters.source === 'VIDEOTAPE' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="tape-number-filter" className="block text-sm font-medium text-gray-700 mb-2">
                   Tape Number
                 </label>
                 <input
+                  id="tape-number-filter"
                   type="text"
                   value={filters.tape_number || ''}
                   onChange={(e) => onFilterChange({ tape_number: e.target.value || undefined })}
