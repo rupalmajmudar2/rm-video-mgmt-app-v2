@@ -315,6 +315,8 @@ export default function MediaCard({ media }: MediaCardProps) {
                           onError={(e) => {
                             console.error('Video playback error:', e);
                             setVideoLoading(false);
+                            // Show error message to user
+                            alert('Video failed to load. The file may be missing or corrupted.');
                           }}
                         >
                     <source src={getVideoUrl()} type="video/mp4" />

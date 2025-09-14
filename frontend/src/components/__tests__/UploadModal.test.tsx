@@ -61,7 +61,7 @@ describe('UploadModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     
     // Set tape number for VideoTape source
-    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    const tapeNumberInput = screen.getByPlaceholderText('Auto-generated from filename');
     fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
@@ -96,7 +96,7 @@ describe('UploadModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     
     // Set tape number for VideoTape source
-    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    const tapeNumberInput = screen.getByPlaceholderText('Auto-generated from filename');
     fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
@@ -133,7 +133,7 @@ describe('UploadModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     
     // Set tape number for VideoTape source
-    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    const tapeNumberInput = screen.getByPlaceholderText('Auto-generated from filename');
     fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
@@ -155,7 +155,7 @@ describe('UploadModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     
     // Set tape number for VideoTape source
-    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    const tapeNumberInput = screen.getByPlaceholderText('Auto-generated from filename');
     fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');
@@ -208,7 +208,7 @@ describe('UploadModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
     
     // Set tape number for VideoTape source
-    const tapeNumberInput = screen.getByPlaceholderText('e.g., TAPE001');
+    const tapeNumberInput = screen.getByPlaceholderText('Auto-generated from filename');
     fireEvent.change(tapeNumberInput, { target: { value: 'TAPE001' } });
     
     const uploadButton = screen.getByText('Upload');

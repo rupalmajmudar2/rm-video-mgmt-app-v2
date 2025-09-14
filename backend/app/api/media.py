@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
@@ -271,40 +272,71 @@ async def upload_media(
     os.makedirs(media_dir, exist_ok=True)
     file_path = os.path.join(media_dir, filename)
     
+    # Parse tags first (needed for validation)
+    tag_list = []
+    if tags:
+        tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+    
+    # Auto-generate tape number from filename for VideoTape sources
+    if source_kind == "VIDEOTAPE" and not tape_number:
+        tape_number = os.path.splitext(file.filename)[0]
+    
+    # Check for duplicate tape number BEFORE any file operations
+    if source_kind == "VIDEOTAPE" and tape_number:
+        existing_tape = db.query(Media).filter(
+            Media.tape_number == tape_number
+        ).first()
+        
+        if existing_tape:
+            if existing_tape.deleted_at is None:
+                # Active duplicate - reject immediately
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Tape number '{tape_number}' already exists. Please use a different tape number."
+                )
+            else:
+                # Soft-deleted duplicate - permanently delete it and continue
+                print(f"Found soft-deleted media with tape number '{tape_number}', permanently deleting it...")
+                
+                # Remove related records
+                db.query(MediaTag).filter(MediaTag.media_id == existing_tape.id).delete()
+                db.query(Comment).filter(Comment.media_id == existing_tape.id).delete()
+                
+                # Delete the soft-deleted media record
+                db.delete(existing_tape)
+                db.commit()
+                print(f"Soft-deleted media with tape number '{tape_number}' permanently deleted")
+    
     # Read file content once
     content = await file.read()
     
     # Calculate file hash for duplicate detection
-    file_hash = hashlib.sha256()
-    file_hash.update(content)
-    content_hash = file_hash.hexdigest()
+    content_hash = hashlib.sha256(content).hexdigest()
     
-    # Check for duplicate files BEFORE saving to disk
+    # Check for duplicate files BEFORE any operations (including soft-deleted ones)
     existing_media = db.query(Media).filter(
-        Media.content_hash == content_hash,
-        Media.deleted_at.is_(None)
+        Media.content_hash == content_hash
     ).first()
     
     if existing_media:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Duplicate file detected. A file with the same content already exists: {existing_media.title or existing_media.filename}"
-        )
+        if existing_media.deleted_at is None:
+            # Active duplicate - reject immediately
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Duplicate file detected. A file with the same content already exists: {existing_media.title or existing_media.filename}"
+            )
+        else:
+            # Soft-deleted duplicate - permanently delete it and create fresh
+            # Remove all related records first
+            db.query(MediaTag).filter(MediaTag.media_id == existing_media.id).delete()
+            db.query(Comment).filter(Comment.media_id == existing_media.id).delete()
+            
+            # Delete the soft-deleted media record
+            db.delete(existing_media)
+            db.commit()
+            
+            # Continue with normal upload process (fall through to create new record)
     
-    # Only save file if no duplicate found
-    try:
-        with open(file_path, "wb") as buffer:
-            buffer.write(content)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to save file: {str(e)}"
-        )
-    
-    # Parse tags
-    tag_list = []
-    if tags:
-        tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
     
     # Create media DTO
     media_dto = MediaDTO(
@@ -321,16 +353,30 @@ async def upload_media(
     media_service = MediaService(db)
     
     try:
-        # Pass the real content hash to the service
+        # Create database record first (without file operations)
         media = media_service.create_media(media_dto, current_user.id, content_hash)
         
-        # Update media with file information
+        # Update media with file information (content_hash already set in create_media)
         media.filename = filename
         media.byte_size = len(content)
-        media.content_hash = content_hash
         media.storage_path = file_path  # Set the storage path
         media.status = "READY"  # For uploaded files, mark as ready
+        
+        # Commit database transaction first
         db.commit()
+        
+        # Only save file to disk AFTER successful database commit
+        try:
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+        except Exception as e:
+            # If file save fails, clean up the database record
+            db.delete(media)
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to save file: {str(e)}"
+            )
         
         # Get tags for response
         tags_response = [mt.tag.name for mt in media.media_tags]
@@ -354,7 +400,7 @@ async def upload_media(
             tags=tags_response,
             comments_count=0
         )
-    except ValueError as e:
+    except (ValueError, IntegrityError) as e:
         # Clean up file if media creation fails
         if os.path.exists(file_path):
             os.remove(file_path)

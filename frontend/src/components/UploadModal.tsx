@@ -32,10 +32,16 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
       setError('');
       setCancelled(false);
       
+      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+      
       // Auto-generate title from filename if not set
       if (!title) {
-        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
         setTitle(nameWithoutExt);
+      }
+      
+      // Auto-generate tape number from filename for VideoTape sources
+      if (sourceKind === 'VIDEOTAPE' && !tapeNumber.trim()) {
+        setTapeNumber(nameWithoutExt);
       }
     }
   };
@@ -57,11 +63,7 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
       return;
     }
 
-    // Validate VideoTape requirements
-    if (sourceKind === 'VIDEOTAPE' && !tapeNumber.trim()) {
-      setError('Tape number is required for VideoTape uploads');
-      return;
-    }
+    // Tape number will be auto-generated from filename if not provided for VideoTape
 
     // Validate non-VideoTape sources don't have tape number
     if (sourceKind !== 'VIDEOTAPE' && tapeNumber.trim()) {
@@ -187,18 +189,17 @@ export default function UploadModal({ isOpen, onClose, onUploadSuccess }: Upload
           {sourceKind === 'VIDEOTAPE' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tape Number *
+                Tape Number
               </label>
               <input
                 type="text"
                 value={tapeNumber}
                 onChange={(e) => setTapeNumber(e.target.value)}
-                placeholder="e.g., TAPE001"
+                placeholder="Auto-generated from filename"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Required for VideoTape sources. Must be unique.
+                Auto-generated from filename if not provided. Must be unique.
               </p>
             </div>
           )}
