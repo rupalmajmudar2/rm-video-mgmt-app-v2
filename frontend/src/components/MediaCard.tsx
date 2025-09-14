@@ -155,7 +155,7 @@ export default function MediaCard({ media }: MediaCardProps) {
             <img
               src={getThumbnailUrl()}
               alt={media.title || media.filename}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
               onError={(e) => {
                 // Fallback to icon if thumbnail fails to load
                 e.currentTarget.style.display = 'none';
@@ -175,10 +175,18 @@ export default function MediaCard({ media }: MediaCardProps) {
               <div className="absolute inset-0 flex items-center justify-center">
                 <button
                   onClick={handlePlayClick}
-                  className="bg-black bg-opacity-50 rounded-full p-4 hover:bg-opacity-70 transition-all"
+                  className="bg-black bg-opacity-50 rounded-full p-4 hover:bg-opacity-70 transition-all hover:scale-110"
                 >
                   <Play className="h-8 w-8 text-white" />
                 </button>
+              </div>
+            )}
+            {/* Hover overlay for images */}
+            {media.kind === 'PHOTO' && (
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Image className="h-8 w-8 text-white" />
+                </div>
               </div>
             )}
           </div>
@@ -370,15 +378,45 @@ export default function MediaCard({ media }: MediaCardProps) {
             {/* Image Display */}
             {media.kind === 'PHOTO' && (
               <div className="mb-6">
-                <img
-                  src={getImageUrl()}
-                  alt={media.title || media.filename}
-                  className="w-full max-h-96 object-contain bg-gray-100 rounded-lg"
-                  onError={(e) => {
-                    console.error('Image load error:', e);
-                    // Fallback to file download
-                  }}
-                />
+                <div className="relative w-full bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={getImageUrl()}
+                    alt={media.title || media.filename}
+                    className="w-full h-auto max-h-[70vh] object-contain cursor-zoom-in"
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                    onError={(e) => {
+                      console.error('Image load error:', e);
+                      // Fallback to file download
+                    }}
+                    onClick={() => {
+                      // Open image in full screen
+                      const newWindow = window.open('', '_blank');
+                      if (newWindow) {
+                        newWindow.document.write(`
+                          <html>
+                            <head>
+                              <title>${media.title || media.filename}</title>
+                              <style>
+                                body { margin: 0; padding: 20px; background: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+                                img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                                .close-btn { position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.7); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+                                .close-btn:hover { background: rgba(0,0,0,0.9); }
+                              </style>
+                            </head>
+                            <body>
+                              <button class="close-btn" onclick="window.close()">Close</button>
+                              <img src="${getImageUrl()}" alt="${media.title || media.filename}" />
+                            </body>
+                          </html>
+                        `);
+                        newWindow.document.close();
+                      }
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity">
+                    Click to view full size
+                  </div>
+                </div>
               </div>
             )}
 
