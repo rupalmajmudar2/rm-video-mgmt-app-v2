@@ -43,22 +43,26 @@ export default function MediaCard({ media }: MediaCardProps) {
 
   const getVideoUrl = () => {
     const token = localStorage.getItem('access_token');
-    return `/api/media/${media.id}/stream?token=${token}`;
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    return `${backendUrl}/media/${media.id}/stream?token=${token}`;
   };
 
   const getImageUrl = () => {
     const token = localStorage.getItem('access_token');
-    return `/api/media/${media.id}/stream?token=${token}`;
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    return `${backendUrl}/media/${media.id}/stream?token=${token}`;
   };
 
   const getThumbnailUrl = () => {
     const token = localStorage.getItem('access_token');
-    return `/api/media/${media.id}/thumbnail?token=${token}`;
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    return `${backendUrl}/media/${media.id}/thumbnail?token=${token}`;
   };
 
   const getDownloadUrl = () => {
     const token = localStorage.getItem('access_token');
-    return `/api/media/${media.id}/download?token=${token}`;
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    return `${backendUrl}/media/${media.id}/download?token=${token}`;
   };
 
   const handlePlayClick = (e: React.MouseEvent) => {
