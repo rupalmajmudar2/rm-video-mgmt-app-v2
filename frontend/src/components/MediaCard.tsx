@@ -51,6 +51,11 @@ export default function MediaCard({ media }: MediaCardProps) {
     return `/api/media/${media.id}/stream?token=${token}`;
   };
 
+  const getThumbnailUrl = () => {
+    const token = localStorage.getItem('access_token');
+    return `/api/media/${media.id}/thumbnail?token=${token}`;
+  };
+
   const getDownloadUrl = () => {
     const token = localStorage.getItem('access_token');
     return `/api/media/${media.id}/download?token=${token}`;
@@ -143,19 +148,54 @@ export default function MediaCard({ media }: MediaCardProps) {
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {/* Media Preview */}
-      <div className="aspect-video bg-gray-100 relative group cursor-pointer" onClick={handleCardClick}>
-        {media.kind === 'VIDEO' ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <button
-              onClick={handlePlayClick}
-              className="bg-black bg-opacity-50 rounded-full p-4 hover:bg-opacity-70 transition-all"
-            >
-              <Play className="h-8 w-8 text-white" />
-            </button>
+      <div className="aspect-video bg-gray-100 relative group cursor-pointer overflow-hidden" onClick={handleCardClick}>
+        {media.thumbnail_path ? (
+          // Show thumbnail if available
+          <div className="relative w-full h-full">
+            <img
+              src={getThumbnailUrl()}
+              alt={media.title || media.filename}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to icon if thumbnail fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            {/* Fallback icon (hidden by default) */}
+            <div className="absolute inset-0 flex items-center justify-center hidden">
+              {media.kind === 'VIDEO' ? (
+                <Play className="h-8 w-8 text-gray-400" />
+              ) : (
+                <Image className="h-12 w-12 text-gray-400" />
+              )}
+            </div>
+            {/* Play button overlay for videos */}
+            {media.kind === 'VIDEO' && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={handlePlayClick}
+                  className="bg-black bg-opacity-50 rounded-full p-4 hover:bg-opacity-70 transition-all"
+                >
+                  <Play className="h-8 w-8 text-white" />
+                </button>
+              </div>
+            )}
           </div>
         ) : (
+          // Fallback to icon if no thumbnail
           <div className="absolute inset-0 flex items-center justify-center">
-            <Image className="h-12 w-12 text-gray-400" />
+            {media.kind === 'VIDEO' ? (
+              <div className="flex flex-col items-center">
+                <Play className="h-8 w-8 text-gray-400 mb-2" />
+                <span className="text-xs text-gray-500">No preview</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <Image className="h-12 w-12 text-gray-400 mb-2" />
+                <span className="text-xs text-gray-500">No preview</span>
+              </div>
+            )}
           </div>
         )}
         

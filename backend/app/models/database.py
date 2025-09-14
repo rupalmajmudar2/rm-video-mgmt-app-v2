@@ -100,7 +100,7 @@ class Session(Base):
     __tablename__ = "sessions"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     refresh_token_hash = Column(String(64), unique=True, nullable=False, index=True)
     user_agent = Column(String(255), nullable=True)
     ip = Column(String(45), nullable=True)  # IPv6 compatible
@@ -120,6 +120,7 @@ class Media(Base):
     title = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
     storage_path = Column(String(1024), nullable=False)
+    thumbnail_path = Column(String(1024), nullable=True)
     filename = Column(String(255), nullable=False)
     ext = Column(String(16), nullable=False)
     byte_size = Column(BigInteger, nullable=False)
@@ -128,8 +129,8 @@ class Media(Base):
     width = Column(Integer, nullable=True)
     height = Column(Integer, nullable=True)
     captured_at = Column(DateTime, nullable=True, index=True)
-    uploaded_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
-    source_id = Column(BigInteger, ForeignKey("media_sources.id"), nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    source_id = Column(Integer, ForeignKey("media_sources.id"), nullable=False)
     tape_number = Column(String(32), nullable=True, index=True)
     source_ref = Column(String(255), nullable=True)
     visibility = Column(Enum(Visibility), nullable=False, default=Visibility.AUTHED)
@@ -168,9 +169,9 @@ class Tag(Base):
 class MediaTag(Base):
     __tablename__ = "media_tags"
     
-    media_id = Column(BigInteger, ForeignKey("media.id", ondelete="CASCADE"), primary_key=True)
-    tag_id = Column(BigInteger, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
-    created_by = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    media_id = Column(Integer, ForeignKey("media.id", ondelete="CASCADE"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     
     # Relationships
@@ -183,8 +184,8 @@ class Comment(Base):
     __tablename__ = "comments"
     
     id = Column(Integer, primary_key=True, index=True)
-    media_id = Column(BigInteger, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    media_id = Column(Integer, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     body = Column(Text, nullable=False)
     created_at = Column(DateTime, nullable=False, server_default=func.now())
     updated_at = Column(DateTime, nullable=False, server_default=func.now(), onupdate=func.now())
@@ -199,7 +200,7 @@ class MediaAsset(Base):
     __tablename__ = "media_assets"
     
     id = Column(Integer, primary_key=True, index=True)
-    media_id = Column(BigInteger, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
+    media_id = Column(Integer, ForeignKey("media.id", ondelete="CASCADE"), nullable=False)
     asset_type = Column(Enum(AssetType), nullable=False)
     storage_path = Column(String(1024), nullable=False)
     mime_type = Column(String(127), nullable=False)
@@ -219,7 +220,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    recipient_user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    recipient_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     event_type = Column(Enum(NotificationEventType), nullable=False)
     payload_json = Column(JSON, nullable=False)
     status = Column(Enum(NotificationStatus), nullable=False, default=NotificationStatus.PENDING)
@@ -237,7 +238,7 @@ class Import(Base):
     id = Column(Integer, primary_key=True, index=True)
     source = Column(Enum(MediaSourceKind), nullable=False)
     external_id = Column(String(255), nullable=True)
-    media_id = Column(BigInteger, ForeignKey("media.id"), nullable=True)
+    media_id = Column(Integer, ForeignKey("media.id"), nullable=True)
     run_id = Column(String(64), nullable=False, index=True)
     status = Column(Enum(ImportStatus), nullable=False)
     message = Column(String(255), nullable=True)
@@ -252,7 +253,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    actor_user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     action = Column(String(64), nullable=False)
     target_table = Column(String(64), nullable=False)
     target_id = Column(BigInteger, nullable=False)

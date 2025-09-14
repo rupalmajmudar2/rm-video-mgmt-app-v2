@@ -26,6 +26,7 @@ export interface Media {
   created_at: string;
   tags: string[];
   comments_count: number;
+  thumbnail_path?: string;
 }
 
 export interface Comment {

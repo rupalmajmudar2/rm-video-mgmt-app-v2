@@ -14,6 +14,7 @@ from ..core.database import get_db
 from ..models.database import User, Media, MediaSource as MediaSourceModel, Tag, MediaTag, Comment
 from ..models.media_source import MediaDTO, get_media_source
 from ..services.media_service import MediaService
+from ..services.thumbnail_service import ThumbnailService
 from .auth import get_current_user
 
 router = APIRouter()
@@ -48,6 +49,7 @@ class MediaResponse(BaseModel):
     created_at: datetime
     tags: List[str] = []
     comments_count: int = 0
+    thumbnail_path: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -127,7 +129,8 @@ async def get_media(
             status=media.status.value,
             created_at=media.created_at,
             tags=tags,
-            comments_count=comments_count
+            comments_count=comments_count,
+            thumbnail_path=media.thumbnail_path
         ))
     
     return result
@@ -172,7 +175,8 @@ async def get_media_by_id(
         status=media.status.value,
         created_at=media.created_at,
         tags=tags,
-        comments_count=comments_count
+        comments_count=comments_count,
+        thumbnail_path=media.thumbnail_path
     )
 
 
@@ -226,7 +230,8 @@ async def create_media(
             status=media.status.value,
             created_at=media.created_at,
             tags=tags,
-            comments_count=0
+            comments_count=0,
+            thumbnail_path=media.thumbnail_path
         )
     except ValueError as e:
         raise HTTPException(
@@ -378,6 +383,18 @@ async def upload_media(
                 detail=f"Failed to save file: {str(e)}"
             )
         
+        # Generate thumbnail after file is saved
+        try:
+            thumbnail_service = ThumbnailService()
+            thumbnail_path = thumbnail_service.generate_thumbnail(file_path, kind, media.id)
+            if thumbnail_path:
+                media.thumbnail_path = thumbnail_path
+                db.commit()
+                print(f"Generated thumbnail for media {media.id}: {thumbnail_path}")
+        except Exception as e:
+            print(f"Failed to generate thumbnail for media {media.id}: {e}")
+            # Don't fail the upload if thumbnail generation fails
+        
         # Get tags for response
         tags_response = [mt.tag.name for mt in media.media_tags]
         
@@ -398,7 +415,8 @@ async def upload_media(
             status=media.status.value,
             created_at=media.created_at,
             tags=tags_response,
-            comments_count=0
+            comments_count=0,
+            thumbnail_path=media.thumbnail_path
         )
     except (ValueError, IntegrityError) as e:
         # Clean up file if media creation fails
@@ -638,6 +656,41 @@ async def download_media(
     )
 
 
+@router.get("/{media_id}/thumbnail")
+async def get_media_thumbnail(
+    media_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get media thumbnail"""
+    media = db.query(Media).filter(Media.id == media_id, Media.deleted_at.is_(None)).first()
+    if not media:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Media not found"
+        )
+    
+    # Check permissions - only owner or admin can view
+    if media.uploaded_by != current_user.id and current_user.role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view this media"
+        )
+    
+    # Check if thumbnail exists
+    if not media.thumbnail_path or not os.path.exists(media.thumbnail_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Thumbnail not found"
+        )
+    
+    return FileResponse(
+        path=media.thumbnail_path,
+        media_type="image/jpeg",
+        filename=f"thumb_{media_id}.jpg"
+    )
+
+
 @router.delete("/{media_id}")
 async def delete_media(
     media_id: int,
@@ -658,6 +711,14 @@ async def delete_media(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this media"
         )
+    
+    # Delete thumbnail if it exists
+    if media.thumbnail_path and os.path.exists(media.thumbnail_path):
+        try:
+            os.remove(media.thumbnail_path)
+            print(f"Deleted thumbnail: {media.thumbnail_path}")
+        except Exception as e:
+            print(f"Failed to delete thumbnail {media.thumbnail_path}: {e}")
     
     # Soft delete
     from datetime import datetime
